@@ -1,0 +1,68 @@
+# D Web Studio - Implementation Phases & Progress Checklist
+
+Master status tracker for the complete local-first outreach system.
+
+## Phase Overview & Progress
+
+- [x] **Phase 0: Project Setup & Environment Protection**
+  - Directories, virtual environment (.venv with Python 3.14), requirements.txt, .env, .gitignore
+  - Relocated sensitive credentials out of root into credentials/gmail/
+  - Structured logging with automatic secret redaction
+  - Immutable configuration loader with secret masking
+  - CLI entrypoint with `--check` and `--config` commands
+- [x] **Phase 1: Local Database & Excel Importer**
+  - SQLite database schema (leads, outreach, runs, events, templates, connections, replies, opt_outs, ai_decisions)
+  - Auto-detection of headerless Excel files (Lead for web dg.xlsx row 1 is a lead)
+  - Normalization (phone to 10-digit digits, email lowercase, priority flag, gender/age)
+  - Duplicate resolution and stable identity key generation (95 distinct leads from 100 rows)
+  - Column H free-text handling as UNVERIFIED lead notes
+  - Excel export utility
+- [x] **Phase 2: Local Minimal Web Dashboard**
+  - Lightweight Flask server running on loopback (127.0.0.1:8756)
+  - Metrics cards (Total, Completed, Pending, Failed)
+  - Live state polling (/api/state) with progress bar
+  - Operational controls: Start, Pause, Stop, Resume
+  - Activity log with stateful icons (✓, →, ○, •, ✕)
+  - Connections management panel (Gmail, WhatsApp, AI status badges)
+  - Connect WhatsApp configuration modal with masked secrets
+- [ ] **Phase 3: Gmail API & OAuth Integration**
+  - Google OAuth installed app desktop flow (loopback redirect)
+  - Token persistence and refresh in credentials/gmail/token.json
+  - Connection test endpoint
+  - RFC 2822 email building with plain-text body
+  - Gmail API send with provider message ID capture
+  - Duplicate send prevention check prior to transmission
+- [ ] **Phase 4: WhatsApp Provider Adapter & Integration**
+  - Abstract WhatsAppProvider base interface
+  - StubProvider for offline / dry-run / safe testing
+  - MetaCloudProvider for official WhatsApp Business Cloud API
+  - Secure credential storage (OS keyring integration)
+  - Interactive connection test verifying token, phone number ID, and WABA ID
+  - Explicit UNKNOWN state when phone availability cannot be confirmed
+- [ ] **Phase 5: Deterministic Automation Engine**
+  - State machine: START -> ELIGIBLE_LEADS -> CHECK_DUPLICATE -> AI_PROCESS -> SEND_EMAIL -> SEND_WHATSAPP -> RECORD_RESULT -> NEXT
+  - Partial completion handling (e.g. email sent, whatsapp pending)
+  - Single-lead failure isolation (error does not abort the campaign)
+  - Rate limiting (messages per minute, delay between dispatches)
+  - Background execution thread isolated from the web UI
+  - State recovery and resume after unexpected termination
+- [ ] **Phase 6: AI Intelligence Layer**
+  - Lead understanding and classification (PROFESSIONAL, BUSINESS_OWNER, UNKNOWN)
+  - Strict separation of FACT, INFERENCE, and UNKNOWN
+  - Prohibition of hallucinated personal facts
+  - Pre-send message validation gates
+  - Robust offline fallback templates when AI is disabled or unreachable
+  - Reply classification and human handoff notification
+- [ ] **Phase 7: Persistent Memory & State Audit**
+  - Lead memory, outreach history, AI decision logs, opt-outs repository
+  - Duplicate protection guarantee backed by unique DB constraints
+  - Run ID assignment and run event timeline
+  - Opt-out registry (STOP, UNSUBSCRIBE, REMOVE)
+- [ ] **Phase 8: Comprehensive Test Suite & Safety Verification**
+  - Unit tests for all modules
+  - Safety audits (credential leak scanner, duplicate send prevention tests)
+  - Dry-run validation tests ensuring zero external calls
+  - Interrupted run recovery simulation
+- [ ] **Phase 9: Production-Ready Local Release**
+  - End-to-end dry-run demonstration
+  - Final verification against Definition of Done

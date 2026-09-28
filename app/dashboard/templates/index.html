@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D Web Studio · Outreach Engine</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1>D Web Studio</h1>
+      <span class="sub">Local Outreach Automation</span>
+    </div>
+    <div class="header-badges">
+      <span id="badge-mode" class="badge badge-mode">DRY RUN</span>
+      <span id="badge-status" class="badge badge-status">READY</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Operational Controls -->
+    <section class="controls-panel card">
+      <div class="control-buttons">
+        <button id="btn-start" class="btn btn-primary" onclick="sendControl('start')">Start Campaign</button>
+        <button id="btn-pause" class="btn btn-secondary" onclick="sendControl('pause')">Pause</button>
+        <button id="btn-resume" class="btn btn-secondary" onclick="sendControl('resume')">Resume</button>
+        <button id="btn-stop" class="btn btn-danger" onclick="sendControl('stop')">Stop</button>
+        <a href="/api/export" class="btn btn-outline" download>Export Excel</a>
+      </div>
+      <div class="current-action-display">
+        <span class="action-label">Current:</span>
+        <span id="action-text" class="action-text">Idle</span>
+      </div>
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <!-- Metrics Cards Grid -->
+    <section class="metrics-grid">
+      <div class="card metric-card">
+        <span class="metric-title">TOTAL LEADS</span>
+        <span id="metric-total" class="metric-value">0</span>
+      </div>
+      <div class="card metric-card metric-success">
+        <span class="metric-title">COMPLETED</span>
+        <span id="metric-completed" class="metric-value">0</span>
+      </div>
+      <div class="card metric-card metric-pending">
+        <span class="metric-title">PENDING</span>
+        <span id="metric-pending" class="metric-value">0</span>
+      </div>
+      <div class="card metric-card metric-failed">
+        <span class="metric-title">FAILED</span>
+        <span id="metric-failed" class="metric-value">0</span>
+      </div>
+      <div class="card metric-card">
+        <span class="metric-title">PRIORITY LEADS</span>
+        <span id="metric-priority" class="metric-value">0</span>
+      </div>
+    </section>
+
+    <!-- Connections & Settings Section -->
+    <section class="connections-section card">
+      <div class="card-header">
+        <h2>Integration Channels</h2>
+      </div>
+      <div class="connections-list">
+        <div class="conn-item">
+          <div class="conn-info">
+            <strong>Gmail API</strong>
+            <span id="conn-gmail-desc" class="conn-desc">Google OAuth 2.0 Desktop</span>
+          </div>
+          <span id="conn-gmail-badge" class="badge badge-conn">DISCONNECTED</span>
+        </div>
+        <div class="conn-item">
+          <div class="conn-info">
+            <strong>WhatsApp Business API</strong>
+            <span id="conn-whatsapp-desc" class="conn-desc">Meta Cloud API / Offline Stub</span>
+          </div>
+          <div>
+            <span id="conn-whatsapp-badge" class="badge badge-conn">STUB</span>
+            <button class="btn btn-sm btn-outline" onclick="openWhatsAppModal()">Configure</button>
+          </div>
+        </div>
+        <div class="conn-item">
+          <div class="conn-info">
+            <strong>AI Personalization</strong>
+            <span class="conn-desc">Fallback Rule-Based Templates Active</span>
+          </div>
+          <span class="badge badge-conn badge-active">TEMPLATE MODE</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activity Stream -->
+    <section class="activity-section card">
+      <div class="card-header">
+        <h2>Live Activity Stream</h2>
+      </div>
+      <div id="events-stream" class="events-stream">
+        <div class="event-row"><span class="icon">•</span><span class="msg">System initialized</span></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- WhatsApp Configuration Modal -->
+  <div id="wa-modal" class="modal">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3>Connect WhatsApp Cloud API</h3>
+        <button class="close-btn" onclick="closeWhatsAppModal()">&times;</button>
+      </div>
+      <form id="wa-form" onsubmit="saveWhatsApp(event)">
+        <div class="form-group">
+          <label for="wa-phone-id">Phone Number ID</label>
+          <input type="text" id="wa-phone-id" required placeholder="e.g. 109283746592834">
+        </div>
+        <div class="form-group">
+          <label for="wa-waba-id">WhatsApp Business Account ID</label>
+          <input type="text" id="wa-waba-id" placeholder="e.g. 192837465109283">
+        </div>
+        <div class="form-group">
+          <label for="wa-token">Meta Access Token</label>
+          <input type="password" id="wa-token" required placeholder="EAAG...">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeWhatsAppModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Connection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

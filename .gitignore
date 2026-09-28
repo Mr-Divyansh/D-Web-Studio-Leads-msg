@@ -1,0 +1,43 @@
+# ---------- Secrets (NEVER commit) ----------
+.env
+credentials/
+credentials.json
+token.json
+*.secret
+*.pem
+
+# ---------- Lead data = PII (NEVER commit) ----------
+*.xlsx
+*.xls
+*.csv
+data/import/
+data/export/
+data/exports/
+
+# ---------- Local runtime state ----------
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/*.sqlite3
+data/*.sqlite3-journal
+data/*.sqlite3-wal
+data/*.sqlite3-shm
+logs/
+*.log
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ---------- Node ----------
+node_modules/
+
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
