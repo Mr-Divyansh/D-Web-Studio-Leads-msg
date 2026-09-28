@@ -85,7 +85,8 @@
           </div>
           <div>
             <span id="conn-whatsapp-badge" class="badge badge-conn">STUB</span>
-            <button class="btn btn-sm btn-outline" onclick="openWhatsAppModal()">Configure</button>
+            <button class="btn btn-sm btn-primary" onclick="openWhatsAppModal()">Connect</button>
+            <button class="btn btn-sm btn-outline" onclick="testWhatsApp()">Test</button>
           </div>
         </div>
         <div class="conn-item">
@@ -113,30 +114,35 @@
   <div id="wa-modal" class="modal">
     <div class="modal-content card">
       <div class="modal-header">
-        <h3>Connect WhatsApp Cloud API</h3>
+        <h3>Connect WhatsApp Business API</h3>
         <button class="close-btn" onclick="closeWhatsAppModal()">&times;</button>
       </div>
+      <p class="modal-note">
+        Official Meta WhatsApp Business Cloud API. Find these values in
+        <strong>Meta Business Manager &rarr; WhatsApp &rarr; API Setup</strong>.
+        Your token is stored in the operating system keyring &mdash; never in the database or this page.
+      </p>
       <form id="wa-form" onsubmit="saveWhatsApp(event)">
         <div class="form-group">
-          <label for="wa-phone-id">Phone Number ID</label>
+          <label for="wa-phone-id">Phone Number ID <span class="req">*</span></label>
           <input type="text" id="wa-phone-id" required placeholder="e.g. 109283746592834">
         </div>
         <div class="form-group">
-          <label for="wa-waba-id">WhatsApp Business Account ID</label>
+          <label for="wa-waba-id">WhatsApp Business Account (WABA) ID</label>
           <input type="text" id="wa-waba-id" placeholder="e.g. 192837465109283">
         </div>
         <div class="form-group">
-          <label for="wa-token">Meta Access Token</label>
-          <input type="password" id="wa-token" required placeholder="EAAG...">
+          <label for="wa-token">Permanent Access Token <span class="req">*</span></label>
+          <input type="password" id="wa-token" required placeholder="EAAG..." autocomplete="off">
         </div>
+        <div id="wa-result" class="modal-result hidden"></div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" onclick="closeWhatsAppModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Connection</button>
+          <button type="submit" class="btn btn-primary" id="wa-submit">Save &amp; Test Connection</button>
         </div>
       </form>
     </div>
   </div>
-
   <script src="/static/app.js"></script>
 </body>
 </html>

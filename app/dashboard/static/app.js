@@ -157,3 +157,92 @@ if (gmailResult === "connected") {
 } else if (gmailResult === "error") {
   alert("Gmail authorization failed. Check the server log for details.");
 }
+// ------------------------------------------------------------ WhatsApp connect
+function openWhatsAppModal() {
+  document.getElementById("wa-modal").classList.add("open");
+  document.getElementById("wa-result").classList.add("hidden");
+  refreshWhatsAppStatus();
+}
+
+function closeWhatsAppModal() {
+  document.getElementById("wa-modal").classList.remove("open");
+}
+
+function showWaResult(ok, text) {
+  const box = document.getElementById("wa-result");
+  box.textContent = text;
+  box.classList.remove("hidden");
+  box.classList.toggle("result-ok", ok);
+  box.classList.toggle("result-err", !ok);
+}
+
+async function saveWhatsApp(event) {
+  event.preventDefault();
+  const btn = document.getElementById("wa-submit");
+  btn.disabled = true;
+  btn.innerText = "Testing connection...";
+  try {
+    const res = await fetch("/api/connections/whatsapp/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone_number_id: document.getElementById("wa-phone-id").value.trim(),
+        waba_id: document.getElementById("wa-waba-id").value.trim(),
+        access_token: document.getElementById("wa-token").value.trim(),
+      }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      showWaResult(false, data.error + (data.hint ? "\n" + data.hint : ""));
+    } else if (data.connected) {
+      showWaResult(true, "Connected. " + data.detail);
+      document.getElementById("wa-token").value = "";
+      await refreshWhatsAppStatus();
+      await fetchEvents();
+      setTimeout(closeWhatsAppModal, 2500);
+    } else {
+      showWaResult(false, "Credentials saved but the test did not confirm the connection.\n\n" + data.detail);
+      await refreshWhatsAppStatus();
+    }
+  } catch (err) {
+    showWaResult(false, "Request failed: " + err);
+  }
+  btn.disabled = false;
+  btn.innerText = "Save & Test Connection";
+}
+
+async function testWhatsApp() {
+  try {
+    const res = await fetch("/api/connections/whatsapp/test", { method: "POST" });
+    const data = await res.json();
+    alert((data.ok ? "WhatsApp connected.\n\n" : "WhatsApp not connected.\n\n") + data.detail);
+    await refreshWhatsAppStatus();
+  } catch (err) {
+    alert("Test failed: " + err);
+  }
+}
+
+async function refreshWhatsAppStatus() {
+  try {
+    const res = await fetch("/api/connections/whatsapp");
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById("conn-whatsapp-badge");
+    if (data.provider === "stub") {
+      badge.innerText = "STUB MODE";
+      document.getElementById("conn-whatsapp-desc").innerText = "Offline simulation - no real messages";
+    } else if (data.connected) {
+      badge.innerText = "CONNECTED";
+      badge.classList.add("badge-active");
+      document.getElementById("conn-whatsapp-desc").innerText =
+        "Meta Cloud API - " + (data.phone_number_id || "configured");
+    } else {
+      badge.innerText = data.configured ? "NOT VERIFIED" : "NOT CONFIGURED";
+      document.getElementById("conn-whatsapp-desc").innerText = data.detail || "";
+    }
+  } catch (err) { /* status is non-critical */ }
+}
+
+// Keep the WhatsApp badge current with the rest of the dashboard.
+setInterval(refreshWhatsAppStatus, 5000);
+refreshWhatsAppStatus();

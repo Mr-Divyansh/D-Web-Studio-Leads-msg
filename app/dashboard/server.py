@@ -246,35 +246,56 @@ def create_app() -> Flask:
         except oauth.GmailAuthError as exc:
             return jsonify({"error": str(exc)}), 400
         return jsonify({"authorization_url": url, "state": state})
-    @app.route("/api/connections/whatsapp", methods=["POST"])
-    def configure_whatsapp():
-        """Update WhatsApp connection metadata (tokens live in the OS keyring)."""
+    @app.route("/api/connections/whatsapp", methods=["GET"])
+    def whatsapp_status():
+        """Describe the current WhatsApp connection (never exposes the token)."""
+        from app.integrations.whatsapp import service
+
+        return jsonify(service.connection_info().to_dict())
+
+    @app.route("/api/connections/whatsapp/connect", methods=["POST"])
+    def whatsapp_connect():
+        """Store Meta credentials, run a live test, persist the result."""
+        from app.integrations.whatsapp import service
+
         data = request.get_json() or {}
         phone_number_id = str(data.get("phone_number_id", "")).strip()
         waba_id = str(data.get("waba_id", "")).strip()
         access_token = str(data.get("access_token", "")).strip()
 
         if not phone_number_id or not access_token:
-            return jsonify({"error": "phone_number_id and access_token are required"}), 400
+            return jsonify({
+                "error": "phone_number_id and access_token are required.",
+                "hint": "Find these in Meta Business Manager > WhatsApp > API Setup.",
+            }), 400
 
-        from app.integrations.whatsapp.credentials import store_whatsapp_credentials
+        outcome = service.connect_whatsapp(phone_number_id, waba_id, access_token)
+        result = outcome["result"]
+        return jsonify({
+            "storage": outcome["storage"],
+            "connected": result.status.value == "SENT",
+            "status": result.status.value,
+            "detail": result.detail,
+        })
 
-        store_whatsapp_credentials(phone_number_id, waba_id, access_token)
-        with transaction() as tx:
-            tx.execute(
-                """
-                INSERT INTO connections (id, service, provider, status, phone_number_id, business_account_id, updated_at)
-                VALUES ('conn-whatsapp', 'whatsapp', 'meta_cloud', 'CONNECTED', ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(service) DO UPDATE SET
-                    provider = 'meta_cloud', status = 'CONNECTED',
-                    phone_number_id = excluded.phone_number_id,
-                    business_account_id = excluded.business_account_id,
-                    updated_at = CURRENT_TIMESTAMP;
-                """,
-                (phone_number_id, waba_id),
-            )
-        log.info("WhatsApp credentials stored (phone_number_id: %s)", phone_number_id)
-        return jsonify({"status": "saved", "service": "whatsapp"})
+    @app.route("/api/connections/whatsapp/test", methods=["POST"])
+    def whatsapp_test():
+        """Re-run the provider connection test on demand."""
+        from app.integrations.whatsapp import service
+
+        result = service.test_whatsapp_connection()
+        ok = result.status.value == "SENT"
+        _set_connection("whatsapp", "CONNECTED" if ok else "DISCONNECTED",
+                        result.detail[:120] if ok else None, None if ok else result.detail)
+        return jsonify({"ok": ok, "status": result.status.value, "detail": result.detail})
+
+    @app.route("/api/connections/whatsapp/disconnect", methods=["POST"])
+    def whatsapp_disconnect():
+        """Remove stored Meta credentials."""
+        from app.integrations.whatsapp import service
+
+        removed = service.disconnect_whatsapp()
+        return jsonify({"status": "disconnected", "credentials_removed": removed})
 
     @app.route("/api/export", methods=["GET"])
     def export_excel():
