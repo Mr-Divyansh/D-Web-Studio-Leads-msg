@@ -232,6 +232,23 @@ class TestWhatsAppRoutes(unittest.TestCase):
     def tearDownClass(cls):
         cls.isolated.__exit__(None, None, None)
 
+    def test_stub_provider_cannot_falsely_report_connected(self):
+        """Saving credentials while WHATSAPP_PROVIDER=stub must not claim CONNECTED."""
+        self.isolated = IsolatedDatabase()
+        self.isolated.__enter__()
+        try:
+            from app.integrations.whatsapp import service
+
+            with mock.patch("app.integrations.whatsapp.credentials._keyring", return_value=None):
+                outcome = service.connect_whatsapp("111", "222", "EAAGsometoken")
+            result = outcome["result"]
+            self.assertEqual(result.status.value, "UNKNOWN")
+            self.assertNotEqual(result.status.value, "SENT")
+            self.assertIn("stub", result.detail.lower())
+            self.assertIn("WHATSAPP_PROVIDER=meta_cloud", result.detail)
+        finally:
+            self.isolated.__exit__(None, None, None)
+
     def test_status_route(self):
         res = self.client.get("/api/connections/whatsapp")
         self.assertEqual(res.status_code, 200)

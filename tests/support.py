@@ -36,6 +36,8 @@ class IsolatedDatabase:
 
         os.environ["DB_PATH"] = str(temp_path / "test_outreach.db")
         os.environ["LOG_LEVEL"] = "CRITICAL"
+        # Apply any caller-supplied overrides (e.g. WHATSAPP_PROVIDER=meta_cloud).
+        os.environ.update(self.env_updates)
 
         # Drop cached settings and any open thread-local connection.
         get_settings(refresh=True)

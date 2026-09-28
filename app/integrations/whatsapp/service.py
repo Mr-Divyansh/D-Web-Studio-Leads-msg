@@ -62,13 +62,10 @@ def connection_info() -> WhatsAppConnectionInfo:
             detail="Stub provider active. Nothing is sent to real WhatsApp numbers.",
         )
 
-    connected = bool(
-        get_connection().execute(
-            "SELECT status FROM connections WHERE service = 'whatsapp';"
-        ).fetchone()["status"] == "CONNECTED"
-    ) if get_connection().execute(
-        "SELECT 1 FROM connections WHERE service = 'whatsapp';"
-    ).fetchone() else False
+    row = get_connection().execute(
+        "SELECT status FROM connections WHERE service = 'whatsapp';"
+    ).fetchone()
+    connected = bool(row and row["status"] == "CONNECTED")
 
     return WhatsAppConnectionInfo(
         provider=provider.name,
@@ -91,7 +88,20 @@ def connect_whatsapp(phone_number_id: str, waba_id: str, access_token: str,
     backend = store_whatsapp_credentials(phone_number_id, waba_id, access_token)
     log.info("WhatsApp credentials stored via %s (token %s)", backend, mask(access_token))
 
-    result = test_whatsapp_connection()
+    # The stub provider cannot verify Meta credentials. Reporting CONNECTED
+    # here would falsely imply the number can actually receive messages.
+    provider = get_provider()
+    if provider.name == "stub":
+        result = DeliveryResult(
+            status=DeliveryStatus.UNKNOWN, provider="stub",
+            detail=(
+                "Credentials saved, but WHATSAPP_PROVIDER=stub so they were not "
+                "verified. Set WHATSAPP_PROVIDER=meta_cloud in .env and restart "
+                "to test against the live Meta Cloud API."
+            ),
+        )
+    else:
+        result = test_whatsapp_connection()
     with transaction() as tx:
         status = "CONNECTED" if result.status is DeliveryStatus.SENT else "ERROR"
         tx.execute(

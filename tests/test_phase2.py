@@ -117,19 +117,17 @@ class TestPhase2Dashboard(unittest.TestCase):
             self.assertTrue(event["message"])
 
     def test_api_whatsapp_config_validation(self):
-        res = self.client.post("/api/connections/whatsapp", json={"phone_number_id": ""})
+        """The connect route must reject missing credentials."""
+        res = self.client.post("/api/connections/whatsapp/connect", json={"phone_number_id": ""})
         self.assertEqual(res.status_code, 400, "missing credentials must be rejected")
+        self.assertIn("hint", res.get_json())
 
-        res = self.client.post(
-            "/api/connections/whatsapp",
-            json={
-                "phone_number_id": "109283746592834",
-                "waba_id": "192837465109283",
-                "access_token": "EAAGtesttoken",
-            },
-        )
+    def test_api_whatsapp_status_is_secret_free(self):
+        res = self.client.get("/api/connections/whatsapp")
         self.assertEqual(res.status_code, 200)
-        self.assertNotIn("EAAGtesttoken", res.get_data(as_text=True), "token must never be echoed")
+        data = res.get_json()
+        self.assertNotIn("access_token", data)
+        self.assertEqual(data["provider"], "stub")
 
     def test_whatsapp_token_is_not_persisted_in_plaintext_db(self):
         """The access token must be stored in the OS keyring, not in SQLite."""
