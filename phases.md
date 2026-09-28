@@ -25,7 +25,7 @@ Master status tracker for the complete local-first outreach system.
   - Activity log with stateful icons (✓, →, ○, •, ✕)
   - Connections management panel (Gmail, WhatsApp, AI status badges)
   - Connect WhatsApp configuration modal with masked secrets
-- [ ] **Phase 3: Gmail API & OAuth Integration**
+- [x] **Phase 3: Gmail API & OAuth Integration**
   - Google OAuth installed app desktop flow (loopback redirect)
   - Token persistence and refresh in credentials/gmail/token.json
   - Connection test endpoint

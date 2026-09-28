@@ -72,7 +72,11 @@
             <strong>Gmail API</strong>
             <span id="conn-gmail-desc" class="conn-desc">Google OAuth 2.0 Desktop</span>
           </div>
-          <span id="conn-gmail-badge" class="badge badge-conn">DISCONNECTED</span>
+          <div>
+            <span id="conn-gmail-badge" class="badge badge-conn">DISCONNECTED</span>
+            <button class="btn btn-sm btn-primary" id="btn-gmail-connect" onclick="connectGmail()">Connect</button>
+            <button class="btn btn-sm btn-outline" onclick="testGmail()">Test</button>
+          </div>
         </div>
         <div class="conn-item">
           <div class="conn-info">

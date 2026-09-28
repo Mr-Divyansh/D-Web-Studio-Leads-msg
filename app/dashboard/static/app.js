@@ -106,3 +106,54 @@ fetchState();
 fetchEvents();
 setInterval(fetchState, 2000);
 setInterval(fetchEvents, 3000);
+
+// ---------------------------------------------------------------- Gmail OAuth
+async function connectGmail() {
+  const btn = document.getElementById("btn-gmail-connect");
+  btn.disabled = true;
+  btn.innerText = "Opening Google...";
+  try {
+    const res = await fetch("/api/connections/gmail/connect");
+    const data = await res.json();
+    if (data.error) {
+      alert("Gmail connect failed:\n" + data.error);
+    } else {
+      // Hand off to Google's consent screen. The browser returns to
+      // /oauth2/callback which stores the token and redirects back here.
+      window.location.href = data.authorization_url;
+    }
+  } catch (err) {
+    alert("Could not reach the dashboard API: " + err);
+  }
+  btn.disabled = false;
+  btn.innerText = "Connect";
+}
+
+async function testGmail() {
+  try {
+    const res = await fetch("/api/connections/gmail/test", { method: "POST" });
+    const data = await res.json();
+    if (data.ok) {
+      alert("Gmail connected: " + data.account + "\n" + data.detail);
+    } else {
+      alert("Gmail not connected.\n\n" + data.detail);
+    }
+    await fetchState();
+  } catch (err) {
+    alert("Connection test failed: " + err);
+  }
+}
+
+// Surface the OAuth result the server appended to the redirect URL.
+const gmailResult = new URLSearchParams(window.location.search).get("gmail");
+if (gmailResult === "connected") {
+  alert("Gmail connected successfully.");
+  fetchState();
+  fetchEvents();
+} else if (gmailResult === "denied") {
+  alert("Google consent was denied. Gmail is still disconnected.");
+} else if (gmailResult === "bad_state") {
+  alert("Security check failed (expired request). Please click Connect again.");
+} else if (gmailResult === "error") {
+  alert("Gmail authorization failed. Check the server log for details.");
+}
