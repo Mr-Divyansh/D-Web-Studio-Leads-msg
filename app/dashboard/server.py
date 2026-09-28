@@ -62,6 +62,22 @@ def _log_event(event_type: str, message: str, icon: str, status: str) -> None:
         )
 
 
+def _oauth_redirect_uri(request) -> str:
+    """Build the OAuth callback URI.
+
+    Google compares this against the redirect URI registered on the OAuth
+    client. For Desktop-app clients it must use the loopback host that is
+    registered (commonly ``http://localhost``), with the port the local
+    server actually listens on. Set OAUTH_REDIRECT_HOST=localhost to force
+    the hostname instead of relying on the Host header.
+    """
+    host = get_settings().oauth_redirect_host
+    if host:
+        port = request.host.split(":")[-1] if ":" in request.host else get_settings().dashboard_port
+        return f"http://{host}:{port}/oauth2/callback"
+    return request.url_root.rstrip("/") + "/oauth2/callback"
+
+
 def create_app() -> Flask:
     """Factory creating the Flask dashboard application."""
     template_folder = Path(__file__).parent / "templates"
@@ -234,12 +250,40 @@ def create_app() -> Flask:
             "detail": status.detail,
         })
 
+    @app.route("/api/connections/gmail/diagnose", methods=["GET"])
+    def gmail_diagnose():
+        """Explain the current OAuth setup so mismatches are easy to spot."""
+        from app.integrations.gmail import oauth
+
+        cfg = oauth.client_config().get("installed", {})
+        registered = cfg.get("redirect_uris", [])
+        current = _oauth_redirect_uri(request)
+        current_base = current.rsplit(":", 1)[0] if ":" in current else current
+        registered_match = any(r.rstrip("/") == current_base for r in registered)
+
+        return jsonify({
+            "registered_redirect_uris": registered,
+            "redirect_uri_being_sent": current,
+            "redirect_base": current_base,
+            "registered_match": registered_match,
+            "scopes_requested": oauth.SCOPES,
+            "authorized": oauth.verify_connection().authorized,
+            "hint": (
+                "Redirect host matches a registered URI. If you still get "
+                "redirect_uri_mismatch, add this exact base URI to the OAuth "
+                "client in Google Cloud Console."
+                if not registered_match else
+                "Redirect looks correct. If you get 'Access blocked', add your "
+                "Google account as a Test user on the OAuth consent screen."
+            ),
+        })
+
     @app.route("/api/connections/gmail/connect", methods=["GET"])
     def gmail_connect():
         """Return the Google consent URL for the operator to open."""
         from app.integrations.gmail import oauth
 
-        redirect_uri = request.url_root.rstrip("/") + "/oauth2/callback"
+        redirect_uri = _oauth_redirect_uri(request)
         state = _issue_state()
         try:
             url = oauth.build_authorization_url(state, redirect_uri)
@@ -326,7 +370,7 @@ def create_app() -> Flask:
             log.warning("Gmail callback rejected: invalid or expired state token.")
             return redirect("/?gmail=bad_state")
 
-        redirect_uri = request.url_root.rstrip("/") + "/oauth2/callback"
+        redirect_uri = _oauth_redirect_uri(request)
         try:
             creds = oauth.exchange_code(code, redirect_uri)
         except Exception as exc:  # noqa: BLE001

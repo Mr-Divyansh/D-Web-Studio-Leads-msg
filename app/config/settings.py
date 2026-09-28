@@ -116,6 +116,7 @@ class Settings:
     gmail_token_path: Path
     gmail_sender_name: str
     gmail_sender_email: str
+    oauth_redirect_host: str
     whatsapp_provider: str
     ai_provider: str
     ai_model: str
@@ -241,6 +242,7 @@ def load_settings() -> Settings:
         gmail_token_path=_path("GMAIL_TOKEN_PATH", "credentials/gmail/token.json"),
         gmail_sender_name=_text("GMAIL_SENDER_NAME", "D Web Studio"),
         gmail_sender_email=_text("GMAIL_SENDER_EMAIL"),
+        oauth_redirect_host=_text("OAUTH_REDIRECT_HOST", ""),
         whatsapp_provider=_text("WHATSAPP_PROVIDER", "stub"),
         ai_provider=_text("AI_PROVIDER", "disabled"),
         ai_model=_text("AI_MODEL"),

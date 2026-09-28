@@ -267,6 +267,34 @@ class TestGmailRoutes(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertFalse(res.get_json()["valid"])
 
+    def test_diagnose_route_reports_registered_redirects(self):
+        """The diagnose endpoint must expose the registered URIs and the one we send."""
+        res = self.client.get("/api/connections/gmail/diagnose")
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertIn("registered_redirect_uris", data)
+        self.assertIn("redirect_uri_being_sent", data)
+        self.assertTrue(data["redirect_uri_being_sent"].endswith("/oauth2/callback"))
+        self.assertNotIn("GOCSPX", res.get_data(as_text=True))
+
+    def test_redirect_host_can_be_forced_to_localhost(self):
+        """OAUTH_REDIRECT_HOST must override the Host header so it matches the client."""
+        import os
+
+        os.environ["OAUTH_REDIRECT_HOST"] = "localhost"
+        from app.config import get_settings
+
+        get_settings(refresh=True)
+        try:
+            res = self.client.get("/api/connections/gmail/connect")
+            self.assertEqual(res.status_code, 200)
+            url = res.get_json()["authorization_url"]
+            self.assertIn("http%3A%2F%2Flocalhost%3A", url,
+                          "forced host must appear in the authorization URL")
+        finally:
+            os.environ.pop("OAUTH_REDIRECT_HOST", None)
+            get_settings(refresh=True)
+
     def test_disconnect_route(self):
         res = self.client.post("/api/connections/gmail/disconnect")
         self.assertEqual(res.status_code, 200)
