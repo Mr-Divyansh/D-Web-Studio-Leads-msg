@@ -6,6 +6,18 @@ token.json
 *.secret
 *.pem
 
+# Google/Meta credential files that Google may download to any folder
+client_secret_*.json
+*client_secret*.json
+*-secrets.json
+service_account*.json
+*-credentials.json
+!credentials/.gitkeep
+
+# Any local JSON that could hold an API key
+secrets.json
+api_keys.json
+
 # ---------- Lead data = PII (NEVER commit) ----------
 *.xlsx
 *.xls
